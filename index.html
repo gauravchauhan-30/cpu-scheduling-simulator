@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time OS CPU Scheduling Simulator & Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-container">
+        <svg class="logo-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <div class="logo-text">
+          
+          <p>CPU Scheduling Simulator & Visualizer</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn btn-secondary icon-btn" title="Toggle Theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar Control Panel -->
+      <aside class="sidebar-panel card">
+        <div class="panel-section">
+          <h2>1. Configure Processes</h2>
+          <form id="process-form" class="form-grid">
+            <div class="input-group">
+              <label for="input-arrival">Arrival Time</label>
+              <input type="number" id="input-arrival" min="0" value="0" required>
+            </div>
+            <div class="input-group">
+              <label for="input-burst">Burst Time (CPU)</label>
+              <input type="number" id="input-burst" min="1" value="5" required>
+            </div>
+            <div class="input-group">
+              <label for="input-priority">Priority</label>
+              <input type="number" id="input-priority" min="0" value="1" placeholder="Lower = Higher prio">
+              <span class="input-hint">Lower number = Higher priority</span>
+            </div>
+            <button type="submit" id="btn-add-process" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Process
+            </button>
+          </form>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-header">
+            <h3>Process Registry</h3>
+            <div class="registry-buttons">
+              <button id="btn-random-processes" class="btn btn-secondary btn-sm" title="Add Random Processes">
+                Random
+              </button>
+              <button id="btn-clear-processes" class="btn btn-danger btn-sm" title="Clear all processes">
+                Clear All
+              </button>
+            </div>
+          </div>
+          <div class="table-container registry-table-container">
+            <table id="registry-table">
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Arrival</th>
+                  <th>Burst</th>
+                  <th>Priority</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>2. Scheduler Engine</h2>
+          <div class="input-group">
+            <label for="select-algorithm">Scheduling Algorithm</label>
+            <select id="select-algorithm">
+              <option value="FCFS">First Come First Served (FCFS)</option>
+              <option value="SJF">Shortest Job First (SJF) [NP]</option>
+              <option value="SRTF">Shortest Remaining Time First (SRTF) [P]</option>
+              <option value="PriorityNP">Priority Scheduling [Non-Preemptive]</option>
+              <option value="PriorityP">Priority Scheduling [Preemptive]</option>
+              <option value="RoundRobin" selected>Round Robin (RR)</option>
+              <option value="MLFQ">Multilevel Feedback Queue (MLFQ)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Config Parameters -->
+          <div id="config-rr" class="dynamic-config-group">
+            <div class="input-group">
+              <label for="input-quantum">Time Quantum</label>
+              <input type="number" id="input-quantum" min="1" value="2">
+            </div>
+          </div>
+
+          <div id="config-mlfq" class="dynamic-config-group" style="display: none;">
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="input-mlfq-q0">Q0 Quantum (RR)</label>
+                <input type="number" id="input-mlfq-q0" min="1" value="2">
+              </div>
+              <div class="input-group">
+                <label for="input-mlfq-q1">Q1 Quantum (RR)</label>
+                <input type="number" id="input-mlfq-q1" min="1" value="4">
+              </div>
+            </div>
+            <span class="input-hint">Q2 is FCFS. Processes demote on quantum exhaustion.</span>
+          </div>
+
+          <div class="persistence-controls">
+            <button id="btn-save-set" class="btn btn-secondary btn-sm">Save Set</button>
+            <button id="btn-load-set" class="btn btn-secondary btn-sm">Load Set</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Visualizer Area -->
+      <main class="visualizer-content">
+        <!-- Simulation Control Bar -->
+        <section class="simulation-controls card">
+          <div class="playback-controls">
+            <button id="btn-play" class="btn btn-success icon-btn" title="Start/Resume Simulation">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+            </button>
+            <button id="btn-pause" class="btn btn-warning icon-btn" title="Pause Simulation" disabled>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+            </button>
+            <button id="btn-step" class="btn btn-secondary icon-btn" title="Step 1 Tick Forward">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+            <button id="btn-reset" class="btn btn-danger icon-btn" title="Reset Simulation">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+            </button>
+          </div>
+
+          <div class="speed-slider-group">
+            <label for="slider-speed">Playback Speed</label>
+            <div class="slider-with-value">
+              <input type="range" id="slider-speed" min="1" max="10" value="2">
+              <span id="speed-value">2 Hz</span>
+            </div>
+          </div>
+
+          <div class="simulation-status">
+            <div class="status-indicator" id="sim-indicator">Idle</div>
+            <div class="status-time">Time: <span id="current-time" class="mono">0</span>s</div>
+          </div>
+        </section>
+
+        <!-- Process Lifecycle Lanes -->
+        <section class="lifecycle-lanes-container card">
+          <div class="lanes-grid">
+            <!-- New Lane -->
+            <div class="lane" id="lane-new">
+              <div class="lane-header">
+                <h3>New</h3>
+                <span class="count-badge" id="badge-new">0</span>
+              </div>
+              <div class="lane-body flex-column" id="container-new">
+                <!-- Cards container -->
+              </div>
+            </div>
+
+            <!-- Ready Queue Lane -->
+            <div class="lane" id="lane-ready">
+              <div class="lane-header">
+                <h3>Ready Queue</h3>
+                <span class="count-badge" id="badge-ready">0</span>
+              </div>
+              <div class="lane-body flex-row scrollable-x" id="container-ready">
+                <!-- Cards container -->
+              </div>
+            </div>
+
+            <!-- Running CPU Box -->
+            <div class="lane" id="lane-running">
+              <div class="lane-header">
+                <h3>CPU Executing</h3>
+              </div>
+              <div class="lane-body flex-center" id="container-running">
+                <div class="cpu-core" id="cpu-core">
+                  <div class="cpu-label">CPU CORE</div>
+                  <div class="cpu-state-text" id="cpu-status-text">IDLE</div>
+                  <div id="running-process-target"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminated Lane -->
+            <div class="lane" id="lane-terminated">
+              <div class="lane-header">
+                <h3>Terminated</h3>
+                <span class="count-badge" id="badge-terminated">0</span>
+              </div>
+              <div class="lane-body flex-column scrollable-y" id="container-terminated">
+                <!-- Cards container -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Gantt Chart -->
+        <section class="gantt-container card">
+          <h2>Gantt Chart</h2>
+          <div class="gantt-chart-wrapper scrollable-x">
+            <div class="gantt-timeline-ticks" id="gantt-ticks">
+              <!-- Dynamically populated tick markers -->
+            </div>
+            <div class="gantt-chart" id="gantt-chart-blocks">
+              <!-- Dynamically populated blocks -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Metrics Table -->
+        <section class="metrics-container card">
+          <h2>Execution Metrics</h2>
+          <div class="table-container">
+            <table id="metrics-table">
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Arrival Time</th>
+                  <th>Burst Time</th>
+                  <th>Priority</th>
+                  <th>Start Time</th>
+                  <th>Completion Time</th>
+                  <th>Turnaround Time</th>
+                  <th>Waiting Time</th>
+                  <th>Response Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="global-stats">
+            <div class="stat-card">
+              <span class="stat-label">CPU Utilization</span>
+              <span class="stat-value" id="stat-cpu">0.00%</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Throughput</span>
+              <span class="stat-value" id="stat-throughput">0.0000 P/s</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Avg Waiting Time</span>
+              <span class="stat-value" id="stat-avg-waiting">0.00s</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Avg Turnaround Time</span>
+              <span class="stat-value" id="stat-avg-turnaround">0.00s</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Comparison Mode -->
+        <section class="comparison-container card">
+          <div class="section-header">
+            <h2>Algorithm Benchmark Suite</h2>
+            <button id="btn-run-comparison" class="btn btn-secondary">Run Benchmark</button>
+          </div>
+          <div class="comparison-results" id="comparison-results-panel" style="display: none;">
+            <div class="table-container">
+              <table id="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Avg Waiting Time</th>
+                    <th>Avg Turnaround Time</th>
+                    <th>Avg Response Time</th>
+                    <th>CPU Utilization</th>
+                    <th>Throughput</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- CSS Bar Charts -->
+            <div class="benchmark-charts">
+              <div class="chart-group">
+                <h3>Average Waiting Time (lower is better)</h3>
+                <div class="bar-chart" id="chart-waiting">
+                  <!-- JS builds bars -->
+                </div>
+              </div>
+              <div class="chart-group">
+                <h3>Average Turnaround Time (lower is better)</h3>
+                <div class="bar-chart" id="chart-turnaround">
+                  <!-- JS builds bars -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="placeholder-text" id="comparison-placeholder">
+            Click "Run Benchmark" to run the current process set against all scheduling algorithms and see side-by-side performance charts.
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Load pure logic first, then controller -->
+  <script src="scheduler.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
