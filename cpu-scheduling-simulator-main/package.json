@@ -1,0 +1,17 @@
+{
+  "name": "cpu-scheduling-simulator",
+  "version": "1.0.0",
+  "description": "Real-Time OS Process Lifecycle Visualizer & CPU Scheduling Simulator",
+  "main": "app.js",
+  "scripts": {
+    "dev": "npx -y http-server -p 3000"
+  },
+  "keywords": [
+    "cpu",
+    "scheduler",
+    "simulator",
+    "os"
+  ],
+  "author": "Harish Birla",
+  "license": "MIT"
+}
